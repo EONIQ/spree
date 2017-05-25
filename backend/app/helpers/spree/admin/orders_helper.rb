@@ -5,6 +5,7 @@ module Spree
       def event_links(order, events)
         links = []
         events.sort.each do |event|
+          puts "can_#{event}?"
           if order.send("can_#{event}?")
             label = Spree.t(event, scope: 'admin.order.events', default: Spree.t(event))
             links << button_link_to(

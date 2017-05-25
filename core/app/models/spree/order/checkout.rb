@@ -67,11 +67,15 @@ module Spree
               end
 
               event :resume do
-                transition to: :resumed, from: :canceled, if: :canceled?
+                transition to: :resumed, from: [:canceled, :on_hold], if: :canceled_or_on_hold?
               end
 
               event :authorize_return do
                 transition to: :awaiting_return
+              end
+
+              event :hold do
+                transition to: :on_hold
               end
 
               before_transition to: :complete, do: :ensure_line_item_variants_are_not_discontinued
@@ -113,6 +117,7 @@ module Spree
               after_transition to: :complete, do: :finalize!
               after_transition to: :resumed, do: :after_resume
               after_transition to: :canceled, do: :after_cancel
+              after_transition to: :on_hold, do: :after_hold
 
               after_transition from: any - :cart, to: any - [:confirm, :complete] do |order|
                 order.update_totals

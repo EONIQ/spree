@@ -59,17 +59,21 @@ module Spree
       after_transition to: :shipped, do: :after_ship
 
       event :cancel do
-        transition to: :canceled, from: [:pending, :ready]
+        transition to: :canceled, from: [:pending, :ready, :on_hold]
+      end
+      event :hold do
+        transition to: :on_hold, from: [:pending, :ready]
       end
       after_transition to: :canceled, do: :after_cancel
 
       event :resume do
-        transition from: :canceled, to: :ready, if: lambda { |shipment|
+        transition from: [:canceled, :on_hold], to: :ready, if: lambda { |shipment|
           shipment.determine_state(shipment.order) == 'ready'
         }
-        transition from: :canceled, to: :pending
+        transition from: [:canceled, :on_hold], to: :pending
       end
-      after_transition from: :canceled, to: [:pending, :ready, :shipped], do: :after_resume
+      after_transition from: [:canceled], to: [:pending, :ready, :shipped], do: :after_resume
+      after_transition from: [:on_hold], to: [:pending, :ready, :shipped], do: :after_resume_from_on_hold
 
       after_transition do |shipment, transition|
         shipment.state_changes.create!(
@@ -98,6 +102,10 @@ module Spree
       manifest.each { |item| manifest_unstock(item) }
     end
 
+    def after_resume_from_on_hold
+      order.updater.update_shipment_state
+    end
+
     def backordered?
       inventory_units.any? { |inventory_unit| inventory_unit.backordered? }
     end
@@ -113,6 +121,7 @@ module Spree
     # ready      all other cases
     def determine_state(order)
       return 'canceled' if order.canceled?
+      return 'on_hold' if order.on_hold?
       return 'pending' unless order.can_ship?
       return 'pending' if inventory_units.any? &:backordered?
       return 'shipped' if shipped?
