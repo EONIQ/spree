@@ -16,11 +16,11 @@ Gem::Specification.new do |s|
   s.homepage    = 'http://spreecommerce.com'
   s.license     = 'BSD-3'
 
-  s.files        = `git ls-files`.split("\n")
+  s.files        = `git ls-files`.split("\n").reject { |f| f.match(/^spec/) }
   s.require_path = 'lib'
 
   s.add_dependency 'activemerchant', '~> 1.59'
-  s.add_dependency 'acts_as_list', '0.7.2'
+  s.add_dependency 'acts_as_list', '~> 0.7', '>= 0.7.2'
   s.add_dependency 'awesome_nested_set', '~> 3.0.1'
   s.add_dependency 'carmen', '~> 1.0.0'
   s.add_dependency 'cancancan', '~> 1.10.1'
