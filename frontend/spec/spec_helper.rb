@@ -45,7 +45,6 @@ require 'spree/testing_support/url_helpers'
 require 'spree/testing_support/order_walkthrough'
 require 'spree/testing_support/caching'
 require 'spree/testing_support/shoulda_matcher_configuration'
-require 'spree/testing_support/microdata'
 
 require 'paperclip/matchers'
 
@@ -123,4 +122,7 @@ RSpec.configure do |config|
   config.include Spree::TestingSupport::Flash
 
   config.include Paperclip::Shoulda::Matchers
+
+  config.order = :random
+  Kernel.srand config.seed
 end

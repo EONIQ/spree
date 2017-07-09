@@ -2,10 +2,9 @@ module Spree
   class Payment < Spree::Base
     include Spree::Core::NumberGenerator.new(prefix: 'P', letters: true, length: 7)
 
-    extend FriendlyId
-    friendly_id :number, slug_column: :number, use: :slugged
-
     include Spree::Payment::Processing
+
+    include NumberAsParam
 
     NON_RISKY_AVS_CODES = ['B', 'D', 'H', 'J', 'M', 'Q', 'T', 'V', 'X', 'Y'].freeze
     RISKY_AVS_CODES     = ['A', 'C', 'E', 'F', 'G', 'I', 'K', 'L', 'N', 'O', 'P', 'R', 'S', 'U', 'W', 'Z'].freeze
@@ -24,6 +23,8 @@ module Spree
     has_many :refunds, inverse_of: :payment
 
     validates :payment_method, presence: true
+    validates :number, uniqueness: true
+
     before_validation :validate_source
 
     after_save :create_payment_profile, if: :profiles_supported?
@@ -211,14 +212,6 @@ module Spree
         gateway_error e
       end
 
-      def invalidate_old_payments
-        unless has_invalid_state?
-          order.payments.with_state('checkout').where("id != ?", self.id).each do |payment|
-            payment.invalidate!
-          end
-        end
-      end
-
       def split_uncaptured_amount
         if uncaptured_amount > 0
           order.payments.create!(
@@ -265,8 +258,10 @@ module Spree
       end
 
       def invalidate_old_payments
-        return if store_credit? # store credits shouldn't invalidate other payment types
-        order.payments.with_state('checkout').where("id != ?", self.id).each do |payment|
+        # invalid payment or store_credit payment shouldn't invalidate other payment types
+        return if has_invalid_state? || store_credit?
+
+        order.payments.with_state('checkout').where.not(id: id).each do |payment|
           payment.invalidate! unless payment.store_credit?
         end
       end

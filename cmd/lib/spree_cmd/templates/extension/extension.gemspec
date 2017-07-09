@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.version     = <%= class_name %>.version
   s.summary     = 'Add extension summary here'
   s.description = 'Add (optional) extension description here'
-  s.required_ruby_version = '>= 2.2.2'
+  s.required_ruby_version = '>= 2.2.7'
 
   s.author    = 'You'
   s.email     = 'you@example.com'
@@ -22,7 +22,8 @@ Gem::Specification.new do |s|
   s.requirements << 'none'
 
   s.add_dependency 'spree_core', '>= 3.1.0', '< 4.0'
-
+  s.add_dependency 'spree_extension'  
+  
   s.add_development_dependency 'capybara'
   s.add_development_dependency 'capybara-screenshot'
   s.add_development_dependency 'coffee-rails'

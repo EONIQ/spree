@@ -6,7 +6,7 @@ module Spree
 
     with_options inverse_of: :reimbursements do
       belongs_to :order
-      belongs_to :customer_return, touch: true
+      belongs_to :customer_return, touch: true, optional: true
     end
 
     with_options inverse_of: :reimbursement do
@@ -15,6 +15,7 @@ module Spree
       has_many :return_items
     end
 
+    validates :number, uniqueness: true
     validates :order, presence: true
     validate :validate_return_items_belong_to_same_order
 

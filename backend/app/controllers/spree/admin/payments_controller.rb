@@ -17,27 +17,39 @@ module Spree
       end
 
       def new
+        # Move order to payment state in order to capture tax generated on shipments
+        @order.next if @order.can_go_to_state?('payment')
         @payment = @order.payments.build
       end
 
       def create
         invoke_callbacks(:create, :before)
-        @payment ||= @order.payments.build(object_params)
-        if @payment.payment_method.source_required? && params[:card].present? and params[:card] != 'new'
-          @payment.source = @payment.payment_method.payment_source_class.find_by_id(params[:card])
-        end
 
         begin
-          if @payment.save
+          if @payment_method.store_credit?
+            payments = @order.add_store_credit_payments
+          else
+            @payment ||= @order.payments.build(object_params)
+            if @payment.payment_method.source_required? && params[:card].present? && params[:card] != 'new'
+              @payment.source = @payment.payment_method.payment_source_class.find_by_id(params[:card])
+            end
+            @payment.save
+            payments = [@payment]
+          end
+
+          if payments && (saved_payments = payments.select &:persisted?).any?
             invoke_callbacks(:create, :after)
+
             # Transition order as far as it will go.
             while @order.next; end
             # If "@order.next" didn't trigger payment processing already (e.g. if the order was
             # already complete) then trigger it manually now
-            @payment.process! if @order.completed? && @payment.checkout?
-            flash[:success] = flash_message_for(@payment, :successfully_created)
+
+            saved_payments.each { |payment| payment.process! if payment.reload.checkout? && @order.complete? }
+            flash[:success] = flash_message_for(saved_payments.first, :successfully_created)
             redirect_to admin_order_payments_path(@order)
           else
+            @payment ||= @order.payments.build(object_params)
             invoke_callbacks(:create, :fails)
             flash[:error] = Spree.t(:payment_could_not_be_created)
             render :new
@@ -81,18 +93,19 @@ module Spree
         if @payment and @payment.payment_method
           @payment_method = @payment.payment_method
         else
-          @payment_method = @payment_methods.first
+          @payment_method = @payment_methods.find_by(id: params[:payment][:payment_method_id]) if params[:payment]
+          @payment_method ||= @payment_methods.first
         end
       end
 
       def load_order
-        @order = Order.friendly.find(params[:order_id])
+        @order = Order.find_by!(number: params[:order_id])
         authorize! action, @order
         @order
       end
 
       def load_payment
-        @payment = Payment.friendly.find(params[:id])
+        @payment = Payment.find_by!(number: params[:id])
       end
 
       def model_class

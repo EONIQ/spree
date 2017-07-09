@@ -23,7 +23,7 @@ module Spree
     def checkout_progress(numbers: false)
       states = @order.checkout_steps
       items = states.each_with_index.map do |state, i|
-        text = Spree.t("order_state.#{state}").titleize
+        text = Spree.t("order_states.#{state}").titleize
         text.prepend("#{i.succ}. ") if numbers
 
         css_classes = []
@@ -74,11 +74,6 @@ module Spree
       end
 
       link_to text.html_safe, spree.cart_path, class: "cart-info #{css_class}"
-    end
-
-    # helper to determine if its appropriate to show the store menu
-    def store_menu?
-      %w{thank_you}.exclude? params[:action]
     end
 
     def taxons_tree(root_taxon, current_taxon, max_level = 1)

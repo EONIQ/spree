@@ -167,7 +167,7 @@ module Spree
           icon = content_tag(:span, '', class: "icon icon-#{icon_name}")
           text.insert(0, icon + ' ')
         end
-        button_tag(text.html_safe, options.merge(type: button_type, class: "btn btn-primary #{options[:class]}", data: { disable_with: "#{ Spree.t(:saving) }..." }))
+        button_tag(text.html_safe, options.merge(type: button_type, class: "btn btn-primary #{options[:class]}", 'data-disable-with' => "#{ Spree.t(:saving) }..."))
       end
 
       def button_link_to(text, url, html_options = {})
@@ -210,16 +210,22 @@ module Spree
 
       def main_part_classes
         if cookies['sidebar-minimized'] == 'true'
-          return 'col-sm-12 col-md-12 sidebar-collapsed'
+          'col-xs-12 sidebar-collapsed'
         else
-          return 'col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2'
+          'col-xs-9 col-xs-offset-3 col-md-10 col-md-offset-2'
+        end
+      end
+
+      def main_sidebar_classes
+        if cookies['sidebar-minimized'] == 'true'
+          'col-xs-3 col-md-2 hidden-xs sidebar'
+        else
+          'col-xs-3 col-md-2 sidebar'
         end
       end
 
       def wrapper_classes
-        if cookies['sidebar-minimized'] == 'true'
-          return 'sidebar-minimized'
-        end
+        'sidebar-minimized' if cookies['sidebar-minimized'] == 'true'
       end
     end
   end

@@ -32,6 +32,7 @@ module Spree
         persist_totals
         PromotionHandler::Cart.new(order).activate
         order.ensure_updated_shipments
+        order.payments.store_credits.checkout.destroy_all
         persist_totals
         true
       else
@@ -42,9 +43,19 @@ module Spree
     private
 
     def after_add_or_remove(line_item, options = {})
+      order.payments.store_credits.checkout.destroy_all
       persist_totals
       shipment = options[:shipment]
-      shipment.present? ? shipment.update_amounts : order.ensure_updated_shipments
+      if shipment.present?
+        # ADMIN END SHIPMENT RATE FIX
+        # refresh shipments to ensure correct shipment amount is calculated when using price sack calculator
+        # for calculating shipment rates.
+        # Currently shipment rate is calculated on previous order total instead of current order total when updating a shipment from admin end.
+        order.refresh_shipment_rates(ShippingMethod::DISPLAY_ON_BACK_END)
+        shipment.update_amounts
+      else
+        order.ensure_updated_shipments
+      end
       PromotionHandler::Cart.new(order, line_item).activate
       Adjustable::AdjustmentsUpdater.update(line_item)
       TaxRate.adjust(order, [line_item]) if options[:line_item_created]
@@ -81,7 +92,8 @@ module Spree
         line_item.quantity += quantity.to_i
         line_item.currency = currency unless currency.nil?
       else
-        opts = ActionController::Parameters.new(options.to_h).
+        options_params = options.is_a?(ActionController::Parameters) ? options : ActionController::Parameters.new(options.to_h)
+        opts = options_params.
                permit(PermittedAttributes.line_item_attributes).to_h.
                merge( { currency: order.currency } )
 

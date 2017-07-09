@@ -4,7 +4,7 @@ module Spree
     has_many :stock_items, dependent: :delete_all, inverse_of: :stock_location
     has_many :stock_movements, through: :stock_items
 
-    belongs_to :state, class_name: 'Spree::State'
+    belongs_to :state, class_name: 'Spree::State', optional: true
     belongs_to :country, class_name: 'Spree::Country'
 
     validates :name, presence: true
@@ -38,6 +38,10 @@ module Spree
     # @return [StockItem] Corresponding StockItem for the StockLocation's variant.
     def stock_item(variant_id)
       stock_items.where(variant_id: variant_id).order(:id).first
+    end
+
+    def stocks?(variant)
+      stock_items.exists?(variant: variant)
     end
 
     # Attempts to look up StockItem for the variant, and creates one if not found.

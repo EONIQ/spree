@@ -13,14 +13,14 @@ module Spree
     DEFAULT_CREATED_BY_EMAIL = 'spree@example.com'.freeze
 
     belongs_to :user, class_name: Spree.user_class.to_s, foreign_key: 'user_id'
-    belongs_to :category, class_name: "Spree::StoreCreditCategory"
+    belongs_to :category, class_name: 'Spree::StoreCreditCategory'
     belongs_to :created_by, class_name: Spree.user_class.to_s, foreign_key: 'created_by_id'
     belongs_to :credit_type, class_name: 'Spree::StoreCreditType', foreign_key: 'type_id'
     has_many :store_credit_events
 
-    validates_presence_of :user, :category, :credit_type, :created_by, :currency
-    validates_numericality_of :amount, greater_than: 0
-    validates_numericality_of :amount_used, greater_than_or_equal_to: 0
+    validates :user, :category, :credit_type, :created_by, :currency, presence: true
+    validates :amount, numericality: { greater_than: 0 }
+    validates :amount_used, numericality: { greater_than_or_equal_to: 0 }
     validate :amount_used_less_than_or_equal_to_amount
     validate :amount_authorized_less_than_or_equal_to_amount
 
@@ -153,7 +153,7 @@ module Spree
     end
 
     def can_void?(payment)
-      payment.pending?
+      payment.pending? || (payment.checkout? && !payment.order.completed?)
     end
 
     def can_credit?(payment)
@@ -203,7 +203,10 @@ module Spree
     end
 
     def store_event
-      return unless amount_changed? || amount_used_changed? || amount_authorized_changed? || action == ELIGIBLE_ACTION
+      return unless saved_change_to_amount? ||
+                    saved_change_to_amount_used? ||
+                    saved_change_to_amount_authorized? ||
+                    action == ELIGIBLE_ACTION
 
       event = if action
                 store_credit_events.build(action: action)

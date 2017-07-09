@@ -20,7 +20,7 @@ Product properties are paginated and can be iterated through by passing along a 
 ### Parameters
 
 page
-: The page number of product property to display.
+: The page number of product properties to display.
 
 per_page
 : The number of product properties to return per page
@@ -31,8 +31,8 @@ per_page
 <%= json(:product_property) do |h|
 { product_properties: [h],
   count: 10,
-  pages: 2,
-  current_page: 1 }
+  current_page: 1,
+  pages: 2 }
 end %>
 
 ## Search
@@ -51,8 +51,8 @@ The search results are paginated.
 <%= json(:product_property) do |h|
  { product_properties: [h],
    count: 10,
-   pages: 2,
-   current_page: 1 }
+   current_page: 1,
+   pages: 2 }
 end %>
 
 ### Sorting results
@@ -93,6 +93,8 @@ If a property with that name does not already exist, then it will automatically 
 
 ## Update
 
+<%= admin_only %>
+
 To update an existing product property, make a request like this:
 
     PUT /api/v1/products/1/product_properties/size?product_property[value]=10
@@ -108,9 +110,10 @@ You may also use a property's id if you know it:
 
 ## Delete
 
+<%= admin_only %>
+
 To delete a product property, make a request like this:
 
     DELETE /api/v1/products/1/product_properties/size
 
 <%= headers 204 %>
-

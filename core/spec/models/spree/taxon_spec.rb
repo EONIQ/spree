@@ -26,10 +26,7 @@ describe Spree::Taxon, type: :model do
     it "stores old slugs in FriendlyIds history" do
       # Stub out unrelated methods that cannot handle a save without an id
       allow(subject).to receive(:set_depth!)
-      # create_slug is a private method, included by FriendlyId::History
-      # it's effect is rather complex and dependent on state and config.
-      # However, when a new slug is set, it should call slugs.create!
-      expect(subject.slugs).to receive(:create!)
+      expect(subject).to receive(:create_slug)
       subject.permalink = "custom-slug"
       subject.run_callbacks :save
     end
@@ -81,5 +78,16 @@ describe Spree::Taxon, type: :model do
     it "does not error out" do
       expect { taxonomy.root.children.unscoped.where(name: "Some name").first_or_create }.not_to raise_error
     end
+  end
+
+  context 'ransackable_associations' do
+    it { expect(described_class.whitelisted_ransackable_associations).to include('taxonomy') }
+  end
+
+  it { expect(taxon).to callback(:set_permalink).before(:validation).on(:create).if(:name) }
+  describe 'validation' do
+    subject { taxon }
+    it { is_expected.to validate_presence_of(:name) }
+    it { is_expected.to validate_uniqueness_of(:name).scoped_to([:parent_id, :taxonomy_id]).allow_blank }
   end
 end

@@ -19,6 +19,7 @@ describe Spree::OrderContents, type: :model do
       it "ensure shipment calls update_amounts instead of order calling ensure_updated_shipments" do
         shipment = create(:shipment)
         expect(subject.order).to_not receive(:ensure_updated_shipments)
+        expect(subject.order).to receive(:refresh_shipment_rates).with(Spree::ShippingMethod::DISPLAY_ON_BACK_END)
         expect(shipment).to receive(:update_amounts)
         subject.add(variant, 1, shipment: shipment)
       end
@@ -52,6 +53,12 @@ describe Spree::OrderContents, type: :model do
 
       expect(order.item_total.to_f).to eq(19.99)
       expect(order.total.to_f).to eq(19.99)
+    end
+
+    context 'when store_credits payment' do
+      let!(:payment) { create(:store_credit_payment, order: order) }
+
+      it { expect { subject.add(variant, 1) }.to change { order.payments.store_credits.count }.by(-1) }
     end
 
     context "running promotions" do
@@ -159,6 +166,17 @@ describe Spree::OrderContents, type: :model do
       expect(line_item.quantity).to eq(2)
     end
 
+    context 'when store_credits payment' do
+      let(:payment) { create(:store_credit_payment, order: order) }
+
+      before do
+        subject.add(variant, 1)
+        payment
+      end
+
+      it { expect { subject.remove(variant, 1) }.to change { order.payments.store_credits.count }.by(-1) }
+    end
+
     it 'should remove line_item if quantity matches line_item quantity' do
       subject.add(variant, 1)
       removed_line_item = subject.remove(variant, 1)
@@ -201,6 +219,17 @@ describe Spree::OrderContents, type: :model do
       end
     end
 
+    context 'when store_credits payment' do
+      let(:payment) { create(:store_credit_payment, order: order) }
+
+      before do
+        @line_item = subject.add(variant, 1)
+        payment
+      end
+
+      it { expect { subject.remove_line_item(@line_item) }.to change { order.payments.store_credits.count }.by(-1) }
+    end
+
     it 'should remove line_item' do
       line_item = subject.add(variant, 1)
       subject.remove_line_item(line_item)
@@ -241,6 +270,12 @@ describe Spree::OrderContents, type: :model do
       expect {
         subject.update_cart params
       }.to change { subject.order.total }
+    end
+
+    context 'when store_credits payment' do
+      let!(:payment) { create(:store_credit_payment, order: order) }
+
+      it { expect { subject.update_cart params }.to change { order.payments.store_credits.count }.by(-1) }
     end
 
     context "submits item quantity 0" do
