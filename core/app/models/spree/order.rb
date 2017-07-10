@@ -4,7 +4,7 @@ require 'spree/order/checkout'
 module Spree
   class Order < Spree::Base
     PAYMENT_STATES = %w(balance_due credit_owed failed paid void)
-    SHIPMENT_STATES = %w(backorder canceled partial pending ready shipped)
+    SHIPMENT_STATES = %w(backorder canceled partial pending ready shipped on_hold)
 
     include Spree::Order::Checkout
     include Spree::Order::CurrencyUpdater
@@ -252,7 +252,7 @@ module Spree
 
     def allow_cancel?
       return false if !completed? || canceled?
-      shipment_state.nil? || %w{ready backorder pending}.include?(shipment_state)
+      shipment_state.nil? || %w{ready backorder pending on_hold}.include?(shipment_state)
     end
 
     def all_inventory_units_returned?
@@ -572,7 +572,15 @@ module Spree
     end
 
     def can_approve?
-      !approved?
+      !approved? && !canceled? && !on_hold?
+    end
+
+    def can_hold?
+      !shipped? && !canceled? && !on_hold?
+    end
+
+    def canceled_or_on_hold?
+      canceled? || on_hold?
     end
 
     def consider_risk
@@ -652,6 +660,17 @@ module Spree
 
       send_cancel_email
       update_with_updater!
+    end
+
+    def after_hold
+      shipments.each { |shipment| shipment.hold! }
+
+      send_on_hold_email
+      self.update_with_updater!
+    end
+
+    def send_on_hold_email
+      OrderMailer.on_hold_email(id).deliver_later
     end
 
     def send_cancel_email

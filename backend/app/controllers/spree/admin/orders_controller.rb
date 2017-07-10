@@ -2,7 +2,7 @@ module Spree
   module Admin
     class OrdersController < Spree::Admin::BaseController
       before_action :initialize_order_events
-      before_action :load_order, only: [:edit, :update, :cancel, :resume, :approve, :resend, :open_adjustments, :close_adjustments, :cart]
+      before_action :load_order, only: [:edit, :update, :cancel, :resume, :approve, :hold, :resend, :open_adjustments, :close_adjustments, :cart]
 
       respond_to :html
 
@@ -100,6 +100,12 @@ module Spree
         redirect_back fallback_location: spree.edit_admin_order_url(@order)
       end
 
+      def hold
+        @order.hold!
+        flash[:success] = Spree.t(:order_held)
+        redirect_to :back
+      end
+
       def resend
         OrderMailer.confirm_email(@order.id, true).deliver_later
         flash[:success] = Spree.t(:order_email_resent)
@@ -136,7 +142,7 @@ module Spree
 
         # Used for extensions which need to provide their own custom event links on the order details view.
         def initialize_order_events
-          @order_events = %w{approve cancel resume}
+          @order_events = %w{approve cancel resume hold}
         end
 
         def model_class

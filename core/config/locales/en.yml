@@ -773,6 +773,7 @@ en:
     guest_user_account: Checkout as a Guest
     has_no_shipped_units: has no shipped units
     height: Height
+    hold: put on hold
     home: Home
     i18n:
       available_locales: Available Locales
@@ -988,6 +989,11 @@ en:
         order_summary: Order %{number} Summary
         subject: Order Confirmation
         thanks: Thank you for your business.
+      on_hold_email:
+        dear_customer: Dear Customer,
+        instructions: Your order has been put on hold.  Please retain this information for your records.
+        order_summary_on_hold: Order %{number} Summary [ON HOLD]
+        subject: Your order is on hold
     order_not_found: We couldn't find your order. Please try that action again.
     order_number: Order %{number}
     order_processed_successfully: Your order has been processed successfully
@@ -1278,6 +1284,7 @@ en:
       pending: pending
       ready: ready
       shipped: shipped
+      on_hold: on hold
     shipment_transfer_success: 'Variants successfully transferred'
     shipment_transfer_error: 'There was an error transferring variants'
     shipments: Shipments
