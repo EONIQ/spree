@@ -115,9 +115,12 @@ module Spree
 
       def gateway_action(source, action, success_state)
         protect_from_connection_error do
-          response = payment_method.send(action, money.money.cents,
-                                         source,
-                                         gateway_options)
+          response = payment_method.send(
+            action,
+            money.money.cents / money.money.currency.subunit_to_unit * 100,
+            source,
+            gateway_options,
+          )
           handle_response(response, success_state, :failure)
         end
       end
